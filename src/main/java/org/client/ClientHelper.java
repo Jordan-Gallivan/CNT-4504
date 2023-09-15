@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ClientOperations {
+public class ClientHelper {
 
     private final Socket socket;
     private final PrintWriter writer;
@@ -25,7 +25,7 @@ public class ClientOperations {
             .put(4, "current_users")
             .put(5, "running_processes")
             .build();
-    private final ImmutableList<Integer> REQUESTS = ImmutableList.<Integer>builder()
+    private final ImmutableList<Integer> NUM_OF_REQUESTS = ImmutableList.<Integer>builder()
             .add(1)
             .add(5)
             .add(10)
@@ -33,11 +33,13 @@ public class ClientOperations {
             .add(20)
             .add(25)
             .build();
-    private final Set<Integer> REQUESTS_SET;
+    private final Set<Integer> NUM_OF_REQUESTS_SET;
 
-    public ClientOperations(Socket socket) {
-        REQUESTS_SET = new HashSet<>(REQUESTS);
+    public ClientHelper(Socket socket) {
+        NUM_OF_REQUESTS_SET = new HashSet<>(NUM_OF_REQUESTS);
         this.socket = socket;
+
+        // initialize Print Writer
         try {
             OutputStream output = this.socket.getOutputStream();
             this.writer = new PrintWriter(output, true);
@@ -47,14 +49,27 @@ public class ClientOperations {
 
     }
 
+    /**
+     * Determines if the provided operation is valid.
+     * @param operation operation to be validated.
+     * @return True if valid operation.
+     */
     public boolean validOperation(int operation) {
         return OPERATIONS.containsKey(operation);
     }
 
+    /**
+     * Determines if the provided request is valid.
+     * @param request request to be validated.
+     * @return True if the request is valid.
+     */
     public boolean validRequests(int request) {
-        return REQUESTS_SET.contains(request);
+        return NUM_OF_REQUESTS_SET.contains(request);
     }
 
+    /**
+     * Prints the selectable operations to the console.
+     */
     public void displayOperations() {
         System.out.println(
                 """
@@ -69,11 +84,15 @@ public class ClientOperations {
         );
     }
 
-    public void displayRequests() {
+    /**
+     * Generates a string comprised of the valid requests.
+     * Example: (1, 5, 10, 15, 20)
+     */
+    public String displayRequests() {
         StringBuilder requestString = new StringBuilder();
         requestString.append("(");
 
-        REQUESTS.forEach((req) -> {
+        NUM_OF_REQUESTS.forEach((req) -> {
             requestString.append(req);
             requestString.append(", ");
         });
@@ -81,23 +100,39 @@ public class ClientOperations {
         requestString.setLength(requestString.length() - 2);
         requestString.append(")");
 
-        System.out.println(requestString);
+        return requestString.toString();
     }
 
-    public boolean sendMessages(int input, int requests) {
+    /**
+     * Sends the user inputted request (input) the requested number of times (n).
+     * @param request The requested operation of the server.
+     * @param n The number of times the n is to be made.
+     * @return True if messages were successfully sent.  False if an exception is thrown indicating a failed message
+     *  delivery or reception.
+     */
+    public boolean sendMessages(int request, int n) {
         try {
-            String serverCommand = OPERATIONS.get(input);
-            for (int i = 0; i < requests; i++) {
+            // pull user inputted request from Operations Map
+            String serverCommand = OPERATIONS.get(request);
+
+            // call the user request the defined number of times and print response.
+            for (int i = 0; i < n; i++) {
+                // send request to server
                 writer.println(serverCommand);
+
+                // receive response
                 InputStream serverResponse = socket.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(serverResponse));
-                String serverResponseText = reader.readLine();;
+
+                // print response
+                String serverResponseText = reader.readLine();
                 while (serverResponseText != null) {
                     serverResponseText = reader.readLine();
                     System.out.println(serverResponseText);
                 }
             }
         } catch (IOException e) {
+            System.out.println(e.getMessage());
             System.out.println(Arrays.toString(e.getStackTrace()));
             return false;
         }
