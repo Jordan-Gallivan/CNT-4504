@@ -1,7 +1,5 @@
 package org.client;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,33 +7,44 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Arrays;
+import java.time.Duration;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ClientHelper {
 
     private final Socket socket;
     private final PrintWriter writer;
-    private final ImmutableMap<Integer, String> OPERATIONS = ImmutableMap.<Integer, String>builder()
-            .put(0, "date_and_time")
-            .put(1, "uptime")
-            .put(2, "memory_use")
-            .put(3, "netstat")
-            .put(4, "current_users")
-            .put(5, "running_processes")
-            .build();
-    private final ImmutableList<Integer> NUM_OF_REQUESTS = ImmutableList.<Integer>builder()
-            .add(1)
-            .add(5)
-            .add(10)
-            .add(15)
-            .add(20)
-            .add(25)
-            .build();
+    private final Map<Integer, String> OPERATIONS;
+    private final List<Integer> NUM_OF_REQUESTS;
     private final Set<Integer> NUM_OF_REQUESTS_SET;
 
     public ClientHelper(Socket socket) {
+        OPERATIONS = new HashMap<>();
+        OPERATIONS.put(0, "date_and_time");
+        OPERATIONS.put(1, "uptime");
+        OPERATIONS.put(2, "memory_use");
+        OPERATIONS.put(3, "netstat");
+        OPERATIONS.put(4, "current_users");
+        OPERATIONS.put(5, "running_processes");
+
+        NUM_OF_REQUESTS = new ArrayList<>();
+        NUM_OF_REQUESTS.add(1);
+        NUM_OF_REQUESTS.add(5);
+        NUM_OF_REQUESTS.add(10);
+        NUM_OF_REQUESTS.add(15);
+        NUM_OF_REQUESTS.add(20);
+        NUM_OF_REQUESTS.add(25);
+
         NUM_OF_REQUESTS_SET = new HashSet<>(NUM_OF_REQUESTS);
         this.socket = socket;
 
@@ -111,30 +120,55 @@ public class ClientHelper {
      *  delivery or reception.
      */
     public boolean sendMessages(int request, int n) {
-        try {
-            // pull user inputted request from Operations Map
-            String serverCommand = OPERATIONS.get(request);
+        // pull user inputted request from Operations Map
+        String serverCommand = OPERATIONS.get(request);
+
+        AtomicLong totalTime = new AtomicLong();
+
+        try (ExecutorService pool = Executors.newCachedThreadPool()) {
 
             // call the user request the defined number of times and print response.
             for (int i = 0; i < n; i++) {
-                // send request to server
-                writer.println(serverCommand);
+                pool.execute(() -> {
+                    writer.println(serverCommand);
 
-                // receive response
-                InputStream serverResponse = socket.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(serverResponse));
+                    LocalTime start = LocalTime.now();
 
-                // print response
-                String serverResponseText = reader.readLine();
-                while (serverResponseText != null) {
-                    serverResponseText = reader.readLine();
-                    System.out.println(serverResponseText);
-                }
+                    // receive response
+                    InputStream serverResponse = null;
+                    try {
+                        serverResponse = socket.getInputStream();
+
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(serverResponse));
+
+                        // print response
+                        String serverResponseText = reader.readLine();
+                        while (serverResponseText != null) {
+                            serverResponseText = reader.readLine();
+                            System.out.println(serverResponseText);
+                        }
+                    } catch (IOException e) {
+                        // TODO: update exceptions handling
+                        throw new RuntimeException(e);
+                    }
+
+                    Duration duration = Duration.between(LocalTime.now(), start);
+                    totalTime.addAndGet(duration.toMillis());
+
+                    // TODO: print current time formatting
+                    System.out.println();
+                });
             }
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            System.out.println(Arrays.toString(e.getStackTrace()));
-            return false;
+            while (!pool.awaitTermination(3, TimeUnit.MINUTES));
+
+            // TODO: print average time format
+            System.out.printf("The total time for all calls: " + totalTime);
+            System.out.println();
+            System.out.printf("The average time for all calls %f \n", totalTime.doubleValue() / n);
+
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+            // TODO: update exception handling
         }
         return true;
     }
