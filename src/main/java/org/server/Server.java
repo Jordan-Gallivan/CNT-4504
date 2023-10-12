@@ -21,7 +21,8 @@ public class Server
     private long startTime = -1;
     private long currentTime = -1;
 
-    private String line = "";
+    private String line = "-1";
+
     public Server(int port)
     {
         try
@@ -38,29 +39,44 @@ public class Server
 
             while(!line.equals("99")) {
                 try {
-                    if (hostname == null) {
-                        line = in.readUTF();
-                        hostname = line;
-                        users.add(hostname);
-                        System.out.println(hostname);
-                    }
-                    line = in.readUTF();
+//                    if (hostname == null) {
+////                        line = in.readUTF();
+//                        client_Input = in.read();
+//                        //hostname = line;
+//
+//                        //users.add(hostname);
+//                        //System.out.println(hostname);
+//                    }
 
-                    if (line.equals("0")) {
+                    line = in.readLine();
+                    //line = in.readUTF();
+                    System.out.println("The client entered: " + line);
+
+                    if (line.equals("date_and_time")) {
                         System.out.println("THE DATE IS: " + (new Date()).toString());
-                    } else if (line.equals("1")) {
+                    }
+                    else if (line.equals("uptime")) {
                         currentTime = System.currentTimeMillis();
                         System.out.print("THE TOTAL RUNTIME OF THE SERVER IS: " + (startTime - currentTime));
-                    } else if (line.equals("2")) {
+                    }
+                    else if (line.equals("memory_use")) {
                         System.out.println("THE SIZE IS: " + socket.getSendBufferSize());
-                    } else if (line.equals("3")) {
-
-                    } else if (line.equals("4")) {
-                        System.out.println("THE USERS ARE");
-                        System.out.println("--------------");
-                    } else if (line.equals("5")) {
+                    }
+                    else if (line.equals("netstat")) {
 
                     }
+                    else if (line.equals("current_users")) {
+                        System.out.println("THE USERS ARE");
+                        System.out.println("--------------");
+                    }
+                    else if (line.equals("running_processes")) {
+
+                    }
+                    else
+                    {
+                        line = "99";
+                    }
+
                 }
                 catch (IOException i)
                 {
