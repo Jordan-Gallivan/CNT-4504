@@ -145,10 +145,12 @@ public class ClientHelper {
                         String serverResponseText = reader.readLine();
                         while (serverResponseText != null) {
                             serverResponseText = reader.readLine();
+
                             System.out.println(serverResponseText);
+
                         }
                     } catch (IOException e) {
-                        // TODO: update exceptions handling
+                        // TODO: update exceptions handling9
                         throw new RuntimeException(e);
                     }
 

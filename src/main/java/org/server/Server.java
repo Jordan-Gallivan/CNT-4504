@@ -1,9 +1,6 @@
 package org.server;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -13,30 +10,26 @@ import com.google.common.collect.ImmutableMap;
 
 public class Server
 {
-    private Socket socket   = null;
-    private ServerSocket server   = null;
-    private DataInputStream in =  null;
+    private Socket socket = null;
     private ArrayList<String> users = new ArrayList<String>();
     private String hostname = null;
-    private long startTime = -1;
-    private long currentTime = -1;
-
-    private String line = "-1";
 
     public Server(int port)
     {
         try
         {
-            server = new ServerSocket(port);
+            ServerSocket server = new ServerSocket(port);
             System.out.println("SERVER STARTED");
-            startTime = System.currentTimeMillis();
+            long startTime = System.currentTimeMillis();
             System.out.println("WAITING ON THE CLIENT TO CONNECT");
 
             socket = server.accept();
             System.out.println("CLIENT ACCEPTED");
 
-            in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+            DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 
+
+            String line = "-1";
             while(!line.equals("99")) {
                 try {
 //                    if (hostname == null) {
@@ -49,18 +42,23 @@ public class Server
 //                    }
 
                     line = in.readLine();
-                    //line = in.readUTF();
+
                     System.out.println("The client entered: " + line);
 
                     if (line.equals("date_and_time")) {
                         System.out.println("THE DATE IS: " + (new Date()).toString());
                     }
                     else if (line.equals("uptime")) {
-                        currentTime = System.currentTimeMillis();
-                        System.out.print("THE TOTAL RUNTIME OF THE SERVER IS: " + (startTime - currentTime));
+                        long currentTime = System.currentTimeMillis();
+                        System.out.println("THE TOTAL RUNTIME OF THE SERVER IS: " + (currentTime - startTime));
+                        String totalTime = String.valueOf(currentTime - startTime);
+
+                        sendMessage(totalTime);
+
                     }
                     else if (line.equals("memory_use")) {
                         System.out.println("THE SIZE IS: " + socket.getSendBufferSize());
+
                     }
                     else if (line.equals("netstat")) {
 
@@ -72,30 +70,45 @@ public class Server
                     else if (line.equals("running_processes")) {
 
                     }
-                    else
-                    {
+                    else {
                         line = "99";
                     }
 
                 }
-                catch (IOException i)
+                catch (IOException e)
                 {
-                    System.out.println(i);
+                    throw new RuntimeException();
                 }
             }
             System.out.println("CLOSING CONNECTION");
 
+
             socket.close();
+            server.close();
             in.close();
         }
-        catch(IOException i)
+        catch(IOException e)
         {
-            System.out.println(i);
+            System.out.println(e);
         }
     }
     public static void main(String[] args)
     {
         Server server = new Server(5000);
+    }
+
+    private void sendMessage(String s) throws IOException {
+        try {
+            OutputStream output = socket.getOutputStream();
+            PrintWriter writer = new PrintWriter(output, true);
+
+            writer.println(s);
+
+            //this.writer.close();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 //mvm package
