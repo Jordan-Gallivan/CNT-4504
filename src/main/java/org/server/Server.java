@@ -45,35 +45,41 @@ public class Server
 
                     System.out.println("The client entered: " + line);
 
-                    if (line.equals("date_and_time")) {
-                        System.out.println("THE DATE IS: " + (new Date()).toString());
-                    }
-                    else if (line.equals("uptime")) {
-                        long currentTime = System.currentTimeMillis();
-                        System.out.println("THE TOTAL RUNTIME OF THE SERVER IS: " + (currentTime - startTime));
-                        String totalTime = String.valueOf(currentTime - startTime);
+                    switch(line)
+                    {
+                        case "date_and_time":
+                            System.out.println("THE DATE IS: " + (new Date()).toString());
+                            Date currentDate = new Date();
 
-                        sendMessage(totalTime);
+                            sendMessage(currentDate.toString());
+                            break;
+                        case "uptime":
+                            long currentTime = System.currentTimeMillis();
+                            System.out.println("THE TOTAL RUNTIME OF THE SERVER IS: " + (currentTime - startTime));
+                            String totalTime = String.valueOf(currentTime - startTime);
 
-                    }
-                    else if (line.equals("memory_use")) {
-                        System.out.println("THE SIZE IS: " + socket.getSendBufferSize());
+                            sendMessage(totalTime);
+                            break;
+                        case "memory_use":
+                            System.out.println("THE SIZE IS: " + socket.getSendBufferSize());
 
-                    }
-                    else if (line.equals("netstat")) {
+                            sendMessage(String.valueOf(socket.getSendBufferSize()));
+                            break;
+                        case "netstat":
 
-                    }
-                    else if (line.equals("current_users")) {
-                        System.out.println("THE USERS ARE");
-                        System.out.println("--------------");
-                    }
-                    else if (line.equals("running_processes")) {
+                            sendMessage("netstat");         //temp Holder
+                            break;
+                        case "current_users":
 
-                    }
-                    else {
-                        line = "99";
-                    }
+                            sendMessage("current Users");       //temp Holder
+                            break;
+                        case "running_processes":
 
+                            sendMessage("running process");     //temp Holder
+                            break;
+                        default:
+                            System.out.println("NO MATCHES FOUND FOR CLIENT INPUT");
+                    }
                 }
                 catch (IOException e)
                 {

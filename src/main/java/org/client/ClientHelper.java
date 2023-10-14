@@ -143,8 +143,9 @@ public class ClientHelper {
 
                         // print response
                         String serverResponseText = reader.readLine();
-                        while (serverResponseText != null) {
-                            serverResponseText = reader.readLine();
+//                        while (serverResponseText != null) {
+                        if(serverResponseText != null) {
+//                            serverResponseText = reader.readLine();
 
                             System.out.println(serverResponseText);
 
