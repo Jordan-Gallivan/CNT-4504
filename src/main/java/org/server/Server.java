@@ -5,6 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Scanner;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -58,7 +60,7 @@ public class Server
                             System.out.println("THE TOTAL RUNTIME OF THE SERVER IS: " + (currentTime - startTime));
                             String totalTime = String.valueOf(currentTime - startTime);
 
-                            sendMessage(totalTime);
+                            sendMessage("THE TOTAL RUNTIME OF THE SERVER IS: " + totalTime + " Ms");
                             break;
                         case "memory_use":
                             System.out.println("THE SIZE IS: " + socket.getSendBufferSize());
@@ -100,7 +102,10 @@ public class Server
     }
     public static void main(String[] args)
     {
-        Server server = new Server(5000);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Please enter the port: ");
+        int serverPort = scanner.nextInt();
+        Server server = new Server(serverPort);
     }
 
     private void sendMessage(String s) throws IOException {
@@ -109,8 +114,6 @@ public class Server
             PrintWriter writer = new PrintWriter(output, true);
 
             writer.println(s);
-
-            //this.writer.close();
         }
         catch (IOException e) {
             throw new RuntimeException(e);

@@ -11,6 +11,9 @@ TODO:
         o if < 15, remove text block in ClientOperations
     o import dependencies to server
     x parseInt exception handling -> go to scanner?
+
+    some inputs are not valid requests
+    Make client circle back to start after server responds
  */
 
 public class Client {
