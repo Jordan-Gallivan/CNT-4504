@@ -11,8 +11,6 @@ TODO:
         o if < 15, remove text block in ClientOperations
     o import dependencies to server
     x parseInt exception handling -> go to scanner?
-
-    some inputs are not valid requests
     Make client circle back to start after server responds
  */
 
@@ -65,7 +63,7 @@ public class Client {
                 numRequests = scanner.nextInt();
 
                 // validate number of requests
-                if (!client.validRequests(serverRequest)) {
+                if (!client.validRequests(numRequests)) {
                     System.out.println(numRequests + " is not a valid request.  Please try again");
                     continue;
                 }
