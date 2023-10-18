@@ -42,7 +42,7 @@ public class Server
 //                        //users.add(hostname);
 //                        //System.out.println(hostname);
 //                    }
-
+                    System.out.println(socket.getLocalAddress());
                     line = in.readLine();
 
                     System.out.println("The client entered: " + line);
@@ -61,25 +61,31 @@ public class Server
                             String totalTime = String.valueOf(currentTime - startTime);
 
                             sendMessage("THE TOTAL RUNTIME OF THE SERVER IS: " + totalTime + " Ms");
+                            sendMessage("end");
                             break;
                         case "memory_use":
                             System.out.println("THE SIZE IS: " + socket.getSendBufferSize());
 
                             sendMessage(String.valueOf(socket.getSendBufferSize()));
+                            sendMessage("end");
                             break;
                         case "netstat":
-
-                            sendMessage("netstat");         //temp Holder
+                            String state = "To be continued";
+                            
+                            sendMessage("Proto          Local Address           Foreign Address         State");
+                            sendMessage("TCP            " + socket.getLocalAddress()  + "            " + socket.getRemoteSocketAddress() + "            " + state);//temp Holder
+                            sendMessage("end");
                             break;
                         case "current_users":
-
-                            sendMessage("current Users");       //temp Holder
+                            sendMessage(socket.getInetAddress().getHostAddress());
+                            sendMessage("end");
                             break;
                         case "running_processes":
-
                             sendMessage("running process");     //temp Holder
+                            sendMessage("end");
                             break;
                         default:
+                            sendMessage("NO MATCHES FOUND FOR CLIENT INPUT");
                             System.out.println("NO MATCHES FOUND FOR CLIENT INPUT");
                     }
                 }

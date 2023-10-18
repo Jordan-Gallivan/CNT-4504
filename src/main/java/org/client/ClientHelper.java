@@ -143,7 +143,7 @@ public class ClientHelper {
 
                         // print response
                         String serverResponseText = reader.readLine();
-                        while (serverResponseText != "end") {
+                        while (!serverResponseText.equals("end")) {
                         //if(serverResponseText != null) {
 //                            serverResponseText = reader.readLine();
 
