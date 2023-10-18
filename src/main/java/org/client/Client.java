@@ -12,6 +12,7 @@ TODO:
     o import dependencies to server
     x parseInt exception handling -> go to scanner?
     Make client circle back to start after server responds
+    Throws "99 is not a valid option. Please try again" message
  */
 
 public class Client {

@@ -7,15 +7,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-
 public class Server
 {
     private Socket socket = null;
-    private ArrayList<String> users = new ArrayList<String>();
-    private String hostname = null;
-
     public Server(int port)
     {
         try
@@ -34,15 +28,6 @@ public class Server
             String line = "-1";
             while(!line.equals("99")) {
                 try {
-//                    if (hostname == null) {
-////                        line = in.readUTF();
-//                        client_Input = in.read();
-//                        //hostname = line;
-//
-//                        //users.add(hostname);
-//                        //System.out.println(hostname);
-//                    }
-                    System.out.println(socket.getLocalAddress());
                     line = in.readLine();
 
                     System.out.println("The client entered: " + line);
@@ -50,39 +35,29 @@ public class Server
                     switch(line)
                     {
                         case "date_and_time":
-                            System.out.println("THE DATE IS: " + (new Date()).toString());
                             Date currentDate = new Date();
-
-                            sendMessage(currentDate.toString());
+                            sendMessage("THE DATE IS: " + currentDate.toString());
                             break;
                         case "uptime":
                             long currentTime = System.currentTimeMillis();
-                            System.out.println("THE TOTAL RUNTIME OF THE SERVER IS: " + (currentTime - startTime));
                             String totalTime = String.valueOf(currentTime - startTime);
-
                             sendMessage("THE TOTAL RUNTIME OF THE SERVER IS: " + totalTime + " Ms");
-                            sendMessage("end");
                             break;
                         case "memory_use":
-                            System.out.println("THE SIZE IS: " + socket.getSendBufferSize());
-
-                            sendMessage(String.valueOf(socket.getSendBufferSize()));
-                            sendMessage("end");
+                            sendMessage("The Memory Usage is: " + String.valueOf(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())
+                             + " bytes");
                             break;
                         case "netstat":
-                            String state = "To be continued";
-                            
-                            sendMessage("Proto          Local Address           Foreign Address         State");
-                            sendMessage("TCP            " + socket.getLocalAddress()  + "            " + socket.getRemoteSocketAddress() + "            " + state);//temp Holder
-                            sendMessage("end");
+                            executeSystemCommand("netstat");
                             break;
                         case "current_users":
-                            sendMessage(socket.getInetAddress().getHostAddress());
-                            sendMessage("end");
+                            //executeSystemCommand("net user");
+                            executeSystemCommand("who");
                             break;
                         case "running_processes":
                             sendMessage("running process");     //temp Holder
-                            sendMessage("end");
+                            //executeSystemCommand("tasklist");
+                            executeSystemCommand("ps");
                             break;
                         default:
                             sendMessage("NO MATCHES FOUND FOR CLIENT INPUT");
@@ -114,6 +89,18 @@ public class Server
         Server server = new Server(serverPort);
     }
 
+
+
+
+    private String executeSystemCommand(String command) throws IOException {
+        Process process = Runtime.getRuntime().exec(command);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            sendMessage(line);
+        }
+        return line;
+    }
     private void sendMessage(String s) throws IOException {
         try {
             OutputStream output = socket.getOutputStream();
@@ -125,6 +112,9 @@ public class Server
             throw new RuntimeException(e);
         }
     }
+
 }
-//mvm package
-//java -cp target/CNT_4504_Project1-1.0-SNAPSHOT.jar org.server.Server
+
+
+
+
