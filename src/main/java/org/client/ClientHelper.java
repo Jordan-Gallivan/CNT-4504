@@ -80,17 +80,16 @@ public class ClientHelper {
      * Prints the selectable operations to the console.
      */
     public void displayOperations() {
-        System.out.println(
-                """
-                        0. Request the Date and Time on the Server
-                        1. Request how long the server has been running since last boot-up
-                        2. Request the current memory usage on the server
-                        3. Request the network connections on the server
-                        4. Request the the users currently connected to the server
-                        5. Request a list of hte programs currently running on the server
-                        99. Exit the program
-                        """
-        );
+        StringBuilder sb = new StringBuilder();
+        sb.append("0. Request the Date and Time on the Server\n");
+        sb.append("1. Request how long the server has been running since last boot-up\n");
+        sb.append("2. Request the current memory usage on the server\n");
+        sb.append("3. Request the network connections on the server\n");
+        sb.append("4. Request the the users currently connected to the server\n");
+        sb.append("5. Request a list of the programs currently running on the server\n");
+        sb.append("99. Exit the program");
+
+        System.out.println(sb);
     }
 
     /**
@@ -124,8 +123,9 @@ public class ClientHelper {
         String serverCommand = OPERATIONS.get(request);
 
         AtomicLong totalTime = new AtomicLong();
+        ExecutorService pool = Executors.newCachedThreadPool();
 
-        try (ExecutorService pool = Executors.newCachedThreadPool()) {
+        try {
 
             // call the user request the defined number of times and print response.
             for (int i = 0; i < n; i++) {
@@ -156,7 +156,7 @@ public class ClientHelper {
                     totalTime.addAndGet(duration.toMillis());
 
                     // TODO: print current time formatting
-                    System.out.println();
+                    System.out.printf("This request took %dmilli-seconds", duration.toMillis());
                 });
             }
             while (!pool.awaitTermination(3, TimeUnit.MINUTES));
@@ -169,6 +169,8 @@ public class ClientHelper {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
             // TODO: update exception handling
+        } finally {
+            pool.shutdown();
         }
         return true;
     }

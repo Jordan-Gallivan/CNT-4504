@@ -7,9 +7,8 @@ import java.util.Scanner;
 
 /*
 TODO:
-    o determine java runtime environment of server
-        o if < 15, remove text block in ClientOperations
-    o import dependencies to server
+    x determine java runtime environment of server
+        x if < 15, remove text block in ClientOperations
     x parseInt exception handling -> go to scanner?
     Make client circle back to start after server responds
     Throws "99 is not a valid option. Please try again" message
@@ -47,16 +46,18 @@ public class Client {
                 System.out.println("Operation: ");
                 serverRequest = scanner.nextInt();
 
-                // validate operation
-                if (!client.validOperation(serverRequest)) {
-                    System.out.println(serverRequest + " is not a valid operation.  Please try again");
-                    continue;
-                }
                 // exit loop condition
                 if (serverRequest == 99) {
                     System.out.println("Exiting...");
                     break;
                 }
+
+                // validate operation
+                if (!client.validOperation(serverRequest)) {
+                    System.out.println(serverRequest + " is not a valid operation.  Please try again");
+                    continue;
+                }
+
 
                 // pull number of requests
                 System.out.println("Select the number of times you would like to make this request" +
