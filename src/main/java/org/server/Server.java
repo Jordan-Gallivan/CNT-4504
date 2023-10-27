@@ -26,7 +26,7 @@ public class Server
 
 
             String line = "-1";
-            while(!line.equals("99")) {
+            loop: while(!line.equals("99")) {
                 try {
                     line = in.readLine();
 
@@ -59,14 +59,17 @@ public class Server
                             //executeSystemCommand("tasklist");
                             executeSystemCommand("ps");
                             break;
+                        case "Exit":
+                            break loop;
                         default:
                             sendMessage("NO MATCHES FOUND FOR CLIENT INPUT");
                             System.out.println("NO MATCHES FOUND FOR CLIENT INPUT");
                     }
-                }
-                catch (IOException e)
-                {
+                    sendMessage("END");
+                } catch (IOException e) {
                     throw new RuntimeException();
+                } catch (NullPointerException e) {
+                    continue;
                 }
             }
             System.out.println("CLOSING CONNECTION");

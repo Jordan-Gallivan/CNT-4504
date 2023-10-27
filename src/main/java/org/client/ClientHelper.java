@@ -9,21 +9,11 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.Duration;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.*;
 
 public class ClientHelper {
 
     private final Socket socket;
-    private final PrintWriter writer;
     private final Map<Integer, String> OPERATIONS;
     private final List<Integer> NUM_OF_REQUESTS;
     private final Set<Integer> NUM_OF_REQUESTS_SET;
@@ -47,14 +37,6 @@ public class ClientHelper {
 
         NUM_OF_REQUESTS_SET = new HashSet<>(NUM_OF_REQUESTS);
         this.socket = socket;
-
-        // initialize Print Writer
-        try {
-            OutputStream output = this.socket.getOutputStream();
-            this.writer = new PrintWriter(output, true);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
     }
 
@@ -122,56 +104,97 @@ public class ClientHelper {
         // pull user inputted request from Operations Map
         String serverCommand = OPERATIONS.get(request);
 
-        AtomicLong totalTime = new AtomicLong();
-        ExecutorService pool = Executors.newCachedThreadPool();
+        LocalTime start = LocalTime.now();
 
-        try {
+        ThreadPool threadPool = new ThreadPool();
 
             // call the user request the defined number of times and print response.
             for (int i = 0; i < n; i++) {
-                pool.execute(() -> {
-                    writer.println(serverCommand);
-
-                    LocalTime start = LocalTime.now();
-
-                    // receive response
-                    InputStream serverResponse = null;
-                    try {
-                        serverResponse = socket.getInputStream();
-
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(serverResponse));
-
-                        // print response
-                        String serverResponseText = reader.readLine();
-                        while (serverResponseText != null) {
-                            System.out.println(serverResponseText);
-                            serverResponseText = reader.readLine();
-                        }
-                    } catch (IOException e) {
-                        // TODO: update exceptions handling9
-                        throw new RuntimeException(e);
-                    }
-
-                    Duration duration = Duration.between(LocalTime.now(), start);
-                    totalTime.addAndGet(duration.toMillis());
-
-                    // TODO: print current time formatting
-                    System.out.printf("This request took %dmilli-seconds", duration.toMillis());
-                });
+                ClientThread thread = new ClientThread(socket, serverCommand, i);
+                thread.start();
+                threadPool.addThread(thread);
             }
-            while (!pool.awaitTermination(3, TimeUnit.MINUTES));
+        while (threadPool.threadsRunning());
+
+        Duration duration = Duration.between(start, LocalTime.now());
 
             // TODO: print average time format
-            System.out.printf("The total time for all calls: " + totalTime);
-            System.out.println();
-            System.out.printf("The average time for all calls %f \n", totalTime.doubleValue() / n);
+            System.out.println("The total time for all calls: " + duration.toMillis());
+            System.out.printf("The average time for all calls %f \n", (double) duration.toMillis() / (double)  n);
 
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-            // TODO: update exception handling
-        } finally {
-            pool.shutdown();
-        }
         return true;
+    }
+
+    private class ClientThread extends Thread {
+        private final Socket socket;
+        private final String serverCommand;
+        private final int iteration;
+
+        public ClientThread(Socket socket, String serverCommand, int iteration) {
+            this.socket = socket;
+            this.serverCommand = serverCommand;
+            this.iteration = iteration;
+        }
+
+        public void run() {
+            try {
+                OutputStream output = this.socket.getOutputStream();
+                PrintWriter writer = new PrintWriter(output, true);
+                writer.println(serverCommand);
+                System.out.println("iteration: " + iteration +  " message Sent");
+                LocalTime start = LocalTime.now();
+
+                // receive response
+                InputStream serverResponse = null;
+                serverResponse = socket.getInputStream();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(serverResponse));
+                StringBuilder response = new StringBuilder();
+
+                System.out.println("iteration: " + iteration +  " waiting response");
+                // print response
+                String serverResponseText = reader.readLine();
+                while (!serverResponseText.equals("END")) {
+                    response.append(serverResponseText);
+                    response.append("\n");
+                    serverResponseText = reader.readLine();
+                }
+                Duration duration = Duration.between(start, LocalTime.now());
+                System.out.println(response + "\n" +
+                        "Iteration: " + iteration + " request took " + duration.toMillis() + "milli-seconds\n");
+
+            } catch (IOException e) {
+                // TODO: update exceptions handling9
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private class ThreadPool {
+        private Set<Thread> threads;
+
+        public ThreadPool() {
+            threads = new HashSet<>();
+        }
+
+        public boolean threadsRunning() {
+            if (threads.isEmpty()) {
+                return true;
+            }
+            Set<Thread> revisedSet = new HashSet<>();
+            for(Thread thread: threads) {
+                if (thread.isAlive()) {
+                    revisedSet.add(thread);
+                }
+            }
+            threads = revisedSet;
+            return !threads.isEmpty();
+        }
+
+        public void addThread(Thread thread) {
+            threads.add(thread);
+        }
+
+
     }
 }
