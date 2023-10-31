@@ -1,121 +1,98 @@
 package org.server;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
 
 public class Server
 {
-    private Socket socket = null;
-    public Server(int port)
-    {
-        try
-        {
-            ServerSocket server = new ServerSocket(port);
-            System.out.println("SERVER STARTED");
-            long startTime = System.currentTimeMillis();
-            System.out.println("WAITING ON THE CLIENT TO CONNECT");
 
-            socket = server.accept();
-            System.out.println("CLIENT ACCEPTED");
-
-            DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-
-
-            String line = "-1";
-            loop: while(!line.equals("99")) {
-                try {
-                    line = in.readLine();
-
-                    System.out.println("The client entered: " + line);
-
-                    switch(line)
-                    {
-                        case "date_and_time":
-                            Date currentDate = new Date();
-                            sendMessage("THE DATE IS: " + currentDate.toString());
-                            break;
-                        case "uptime":
-                            long currentTime = System.currentTimeMillis();
-                            String totalTime = String.valueOf(currentTime - startTime);
-                            sendMessage("THE TOTAL RUNTIME OF THE SERVER IS: " + totalTime + " Ms");
-                            break;
-                        case "memory_use":
-                            sendMessage("The Memory Usage is: " + String.valueOf(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())
-                             + " bytes");
-                            break;
-                        case "netstat":
-                            executeSystemCommand("netstat");
-                            break;
-                        case "current_users":
-                            //executeSystemCommand("net user");
-                            executeSystemCommand("who");
-                            break;
-                        case "running_processes":
-                            sendMessage("running process");     //temp Holder
-                            //executeSystemCommand("tasklist");
-                            executeSystemCommand("ps");
-                            break;
-                        case "Exit":
-                            break loop;
-                        default:
-                            sendMessage("NO MATCHES FOUND FOR CLIENT INPUT");
-                            System.out.println("NO MATCHES FOUND FOR CLIENT INPUT");
-                    }
-                    sendMessage("END");
-                } catch (IOException e) {
-                    throw new RuntimeException();
-                } catch (NullPointerException e) {
-                    continue;
-                }
-            }
-            System.out.println("CLOSING CONNECTION");
-
-
-            socket.close();
-            server.close();
-            in.close();
-        }
-        catch(IOException e)
-        {
-            System.out.println(e);
-        }
-    }
     public static void main(String[] args)
     {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Please enter the port: ");
-        int serverPort = scanner.nextInt();
-        Server server = new Server(serverPort);
-    }
+        int port = scanner.nextInt();
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
 
+            loop: while (true) {
 
+                System.out.println("SERVER STARTED");
 
+                System.out.println("WAITING ON THE CLIENT TO CONNECT");
 
-    private String executeSystemCommand(String command) throws IOException {
-        Process process = Runtime.getRuntime().exec(command);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            sendMessage(line);
-        }
-        return line;
-    }
-    private void sendMessage(String s) throws IOException {
-        try {
-            OutputStream output = socket.getOutputStream();
-            PrintWriter writer = new PrintWriter(output, true);
+                Socket socket = serverSocket.accept();
+                System.out.println("CLIENT ACCEPTED");
 
-            writer.println(s);
-        }
-        catch (IOException e) {
+                ServerHelper serverHelper = new ServerHelper(socket);
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+
+                String messageToSend;
+
+                String line = in.readLine();
+
+                System.out.println("The client entered: " + line);
+
+                switch (line) {
+                    case "date_and_time":
+                        Date currentDate = new Date();
+                        messageToSend = "THE DATE IS: " + currentDate.toString();
+                        break;
+                    case "uptime":
+                        messageToSend = "THE TOTAL UPTIME OF THE SERVER IS: " +
+                                serverHelper.executeSystemCommand("uptime");
+                        break;
+                    case "memory_use":
+                        long totalMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+                        messageToSend = "The Memory Usage is: " + totalMemory + " bytes";
+                        break;
+                    case "netstat":
+                        messageToSend = serverHelper.executeSystemCommand("netstat");
+                        break;
+                    case "current_users":
+                        //executeSystemCommand("net user");
+                        messageToSend = serverHelper.executeSystemCommand("who");
+                        break;
+                    case "running_processes":
+                        messageToSend = "running process" + serverHelper.executeSystemCommand("ps");
+                        //executeSystemCommand("tasklist");
+                        break;
+                    case "EXIT":
+                        writer.flush();
+                        socket.close();
+                        break loop;
+                    default:
+                        messageToSend = "NO MATCHES FOUND FOR CLIENT INPUT";
+                        System.out.println("NO MATCHES FOUND FOR CLIENT INPUT");
+                }
+
+                if (messageToSend == null) {
+                    System.out.println("ERROR executing system command");
+                    messageToSend = "ERROR executing system command";
+                }
+                System.out.println("Sending Message");
+                if (serverHelper.sendMessage(messageToSend, writer)) {
+                    System.out.println("Message Sent");
+                } else {
+                    System.out.println("ERROR sending message");
+                }
+                serverHelper.sendMessage("END", writer);
+
+                writer.flush();
+            }
+
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
 
+    }
 }
 
 

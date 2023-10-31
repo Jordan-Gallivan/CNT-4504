@@ -1,7 +1,6 @@
 package org.client;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -9,16 +8,28 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.Duration;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * Helper class to generate Threads for client requests and display results to user.
+ */
 public class ClientHelper {
 
-    private final Socket socket;
+    private final String hostname;
+    private final int port;
     private final Map<Integer, String> OPERATIONS;
     private final List<Integer> NUM_OF_REQUESTS;
     private final Set<Integer> NUM_OF_REQUESTS_SET;
 
-    public ClientHelper(Socket socket) {
+    public ClientHelper(String hostname, int port) {
         OPERATIONS = new HashMap<>();
         OPERATIONS.put(0, "date_and_time");
         OPERATIONS.put(1, "uptime");
@@ -36,7 +47,8 @@ public class ClientHelper {
         NUM_OF_REQUESTS.add(25);
 
         NUM_OF_REQUESTS_SET = new HashSet<>(NUM_OF_REQUESTS);
-        this.socket = socket;
+        this.hostname = hostname;
+        this.port = port;
 
     }
 
@@ -104,97 +116,93 @@ public class ClientHelper {
         // pull user inputted request from Operations Map
         String serverCommand = OPERATIONS.get(request);
 
+        // initialize current time for calculating average
         LocalTime start = LocalTime.now();
 
-        ThreadPool threadPool = new ThreadPool();
+        // initialize threadpool
+        ExecutorService executor = Executors.newFixedThreadPool(n);
 
-            // call the user request the defined number of times and print response.
-            for (int i = 0; i < n; i++) {
-                ClientThread thread = new ClientThread(socket, serverCommand, i);
-                thread.start();
-                threadPool.addThread(thread);
+        // create threads for each client request
+        for (int i = 0; i < n; i++) {
+            Runnable thread = new ClientThread(serverCommand, i);
+            executor.execute(thread);
+        }
+
+        // shutdown and halt current thread until all threads complete execution
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
             }
-        while (threadPool.threadsRunning());
+        } catch (InterruptedException e) {
+            System.out.println("ERROR.  Client Requests timed out.");
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
 
         Duration duration = Duration.between(start, LocalTime.now());
 
-            // TODO: print average time format
-            System.out.println("The total time for all calls: " + duration.toMillis());
-            System.out.printf("The average time for all calls %f \n", (double) duration.toMillis() / (double)  n);
-
+        System.out.println("The total time for all calls: " + duration.toMillis());
+        double average = (double) duration.toMillis() / (double)  n;
+        System.out.println("The average time for all calls: " + average + "milliseconds" );
         return true;
     }
 
-    private class ClientThread extends Thread {
-        private final Socket socket;
+    /**
+     * Sends the keyword "EXIT" to the server to close the connection.
+     */
+    public void sendExitMessage() {
+        Runnable thread = new ClientThread("EXIT", 0);
+        thread.run();
+
+    }
+
+    /**
+     * Client Thread to send request to Server and print response.  Each Thread creates a new socket and the socket is
+     * closed when the response is terminated with the key word "END".
+     */
+    private class ClientThread implements Runnable {
         private final String serverCommand;
         private final int iteration;
 
-        public ClientThread(Socket socket, String serverCommand, int iteration) {
-            this.socket = socket;
+        public ClientThread(String serverCommand, int iteration) {
             this.serverCommand = serverCommand;
             this.iteration = iteration;
         }
 
         public void run() {
-            try {
-                OutputStream output = this.socket.getOutputStream();
-                PrintWriter writer = new PrintWriter(output, true);
-                writer.println(serverCommand);
-                System.out.println("iteration: " + iteration +  " message Sent");
+            // try with resources, create new socket
+            try (Socket socket = new Socket(hostname, port)) {
+                // initialize current time for calculation of request time
                 LocalTime start = LocalTime.now();
 
-                // receive response
-                InputStream serverResponse = null;
-                serverResponse = socket.getInputStream();
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(serverResponse));
+                // initialize readers/writers and send request to server
+                OutputStream output = socket.getOutputStream();
+                PrintWriter writer = new PrintWriter(output, true);
+                writer.println(serverCommand);
+                writer.flush();
                 StringBuilder response = new StringBuilder();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                String line;
 
-                System.out.println("iteration: " + iteration +  " waiting response");
-                // print response
-                String serverResponseText = reader.readLine();
-                while (!serverResponseText.equals("END")) {
-                    response.append(serverResponseText);
+                // receive response form server until response is terminated with keyword "END"
+                while (!(line = reader.readLine()).equals("END")) {
+                    response.append(line);
                     response.append("\n");
-                    serverResponseText = reader.readLine();
                 }
+
+                // flush reader/writers.  Closing the reader closes the wrapped socket see below link
+                // https://stackoverflow.com/questions/30225934/closing-bufferedwriter-reader-affects-other-instances-bound-to-the-same-socket
+                output.flush();
+                reader.close();
+
                 Duration duration = Duration.between(start, LocalTime.now());
-                System.out.println(response + "\n" +
-                        "Iteration: " + iteration + " request took " + duration.toMillis() + "milli-seconds\n");
-
-            } catch (IOException e) {
-                // TODO: update exceptions handling9
-                throw new RuntimeException(e);
+                System.out.println(response + "Iteration: " + iteration +
+                        " request took " + duration.toMillis() + "milliseconds");
+            } catch (IOException | NullPointerException e) {
+                System.out.println("ERROR in Thread");
+                System.out.println(e.getMessage());
             }
         }
-    }
-
-    private class ThreadPool {
-        private Set<Thread> threads;
-
-        public ThreadPool() {
-            threads = new HashSet<>();
-        }
-
-        public boolean threadsRunning() {
-            if (threads.isEmpty()) {
-                return true;
-            }
-            Set<Thread> revisedSet = new HashSet<>();
-            for(Thread thread: threads) {
-                if (thread.isAlive()) {
-                    revisedSet.add(thread);
-                }
-            }
-            threads = revisedSet;
-            return !threads.isEmpty();
-        }
-
-        public void addThread(Thread thread) {
-            threads.add(thread);
-        }
-
-
     }
 }
