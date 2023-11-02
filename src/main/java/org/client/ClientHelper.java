@@ -18,9 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Helper class to generate Threads for client requests and display results to user.
- */
+/** Helper class to generate Threads for client requests and display results to user. */
 public class ClientHelper {
 
     private final String hostname;

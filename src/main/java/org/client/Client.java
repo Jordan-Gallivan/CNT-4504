@@ -2,9 +2,7 @@ package org.client;
 
 import java.util.Scanner;
 
-/**
- * User facing Client software to process requests with, and return results of server.
- */
+/** User facing Client software to process requests with, and return results of server. */
 public class Client {
     public static void main(String[] args) {
 
