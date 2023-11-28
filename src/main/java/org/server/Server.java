@@ -1,11 +1,11 @@
-package org.server;
+//package org.server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 
 /** User facing software to receive port for communication with client and process all client requests. */
-public class Server {   // TODO curly brace on same line as control statement
+public class Server {
     public static void main(String[] args) {
         // take input from user to define a port
         Scanner scanner = new Scanner(System.in);

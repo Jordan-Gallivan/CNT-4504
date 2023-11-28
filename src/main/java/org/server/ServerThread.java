@@ -1,5 +1,5 @@
-package org.server;
-import java.io.InputStream;   
+//package org.server;
+import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -27,7 +27,7 @@ public class ServerThread implements Runnable {
             String messageToSend;
 
             line = reader.readLine();
-            switch (line) { // TODO spaces between closing parenthesis and opening curly bracket.  seen throughout
+            switch (line) {
                 case "date_and_time":
                     Date currentDate = new Date();
                     messageToSend = "THE DATE IS: " + currentDate.toString();
@@ -43,7 +43,7 @@ public class ServerThread implements Runnable {
                 case "netstat":
                     messageToSend = ServerHelper.executeSystemCommand("netstat");
                     break;
-                case "current_users:":
+                case "current_users":
                     messageToSend = ServerHelper.executeSystemCommand("who");
                     break;
                 case "running_processes":

@@ -1,4 +1,4 @@
-package org.client;
+//package org.client;
 
 public class TestResults {
     public int command;
