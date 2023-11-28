@@ -1,14 +1,7 @@
 package org.server;
-
-// TODO remove unused import statements
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Date;
 import java.util.Scanner;
 
 /** User facing software to receive port for communication with client and process all client requests. */
