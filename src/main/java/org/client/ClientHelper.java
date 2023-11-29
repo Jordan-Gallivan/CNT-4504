@@ -43,6 +43,7 @@ public class ClientHelper {
         NUM_OF_REQUESTS.add(15);
         NUM_OF_REQUESTS.add(20);
         NUM_OF_REQUESTS.add(25);
+        NUM_OF_REQUESTS.add(100);
 
         NUM_OF_REQUESTS_SET = new HashSet<>(NUM_OF_REQUESTS);
         this.hostname = hostname;

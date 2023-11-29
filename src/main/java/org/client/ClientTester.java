@@ -35,6 +35,7 @@ public class ClientTester {
         numRequests.add(15);
         numRequests.add(20);
         numRequests.add(25);
+        numRequests.add(100);
 
         List<TestResults> results = new ArrayList<>();
         List<TestResults> tempResults;

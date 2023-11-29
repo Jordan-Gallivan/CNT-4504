@@ -9,7 +9,7 @@ public class Client {
         Scanner scanner = new Scanner(System.in);
 
         // pull hostname and port from user.
-        System.out.println("Welcome to the CNT 4504 Project 1 Client.  Please enter the Hostname and Port.");
+        System.out.println("Welcome to the CNT 4504 Project 2 Client.  Please enter the Hostname and Port.");
         System.out.println("Hostname: ");
         String hostname = scanner.nextLine();
         System.out.println("Port: ");

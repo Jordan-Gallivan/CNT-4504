@@ -29,16 +29,16 @@ public class ServerThread implements Runnable {
             line = reader.readLine();
             switch (line) {
                 case "date_and_time":
-                    Date currentDate = new Date();
-                    messageToSend = "THE DATE IS: " + currentDate.toString();
+//                    Date currentDate = new Date();
+                    messageToSend = "THE DATE IS: " + ServerHelper.executeSystemCommand("date");
                     break;
                 case "uptime":
                     messageToSend = "THE TOTAL UPTIME OF THE SERVER IS: " +
                             ServerHelper.executeSystemCommand("uptime");
                     break;
                 case "memory_use":
-                    long totalMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-                    messageToSend = "THE MEMORY USAGE IS: " + totalMemory + " bytes";
+//                    long totalMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+                    messageToSend = "THE MEMORY USAGE IS: " + "\n" + ServerHelper.executeSystemCommand("free");
                     break;
                 case "netstat":
                     messageToSend = ServerHelper.executeSystemCommand("netstat");
